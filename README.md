@@ -1,4 +1,5 @@
 # PS99 Clan Wars Monitor
+IMPORTANT: you will also need to find somewhere to host the bot because it will only run as long as your computer(or whatever device you set the bot up on) is turned on and running.
 
 A Python 3.9+ Discord bot that stores Roblox-to-Discord registrations in SQLite and checks registered Roblox users during a clan war. It reports confirmed exits from the configured Pet Simulator 99 Roblox experience and reconnections.
 
