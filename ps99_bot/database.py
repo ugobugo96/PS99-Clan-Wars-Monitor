@@ -7,10 +7,13 @@ from typing import Optional
 
 class Database:
     def __init__(self, path: str):
-        self.path = path
-        if path != ":memory:":
-            Path(path).expanduser().parent.mkdir(parents=True, exist_ok=True)
-        self.connection = sqlite3.connect(path, check_same_thread=False)
+        if path == ":memory:":
+            self.path = path
+        else:
+            database_path = Path(path).expanduser()
+            database_path.parent.mkdir(parents=True, exist_ok=True)
+            self.path = str(database_path.resolve())
+        self.connection = sqlite3.connect(self.path, check_same_thread=False)
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
         self._initialize()

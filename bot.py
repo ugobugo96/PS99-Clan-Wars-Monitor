@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from ps99_bot.config import Config
 from ps99_bot.database import Database
+from ps99_bot.instance_lock import InstanceAlreadyRunning, InstanceLock
 from ps99_bot.monitor import WarMonitor
 from ps99_bot.roblox import RobloxClient
 
@@ -151,8 +152,18 @@ def main():
     config = Config.from_env()
     logging.basicConfig(level=getattr(logging, config.log_level, logging.INFO),
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    bot = create_bot(config)
-    bot.run(config.discord_token, log_handler=None)
+    instance_lock = InstanceLock(config.database_path)
+    try:
+        instance_lock.acquire()
+    except InstanceAlreadyRunning as exc:
+        logging.error("%s", exc)
+        raise SystemExit(1)
+    try:
+        bot = create_bot(config)
+        # discord.py reconnects the Gateway automatically unless reconnect=False.
+        bot.run(config.discord_token, log_handler=None)
+    finally:
+        instance_lock.release()
 
 
 if __name__ == "__main__":

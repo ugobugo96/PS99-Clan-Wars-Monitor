@@ -1,7 +1,12 @@
 import asyncio
+import os
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from ps99_bot.database import Database
+from ps99_bot.instance_lock import InstanceAlreadyRunning, InstanceLock
 from ps99_bot.monitor import WarMonitor
 from ps99_bot.roblox import classify_presence
 
@@ -38,6 +43,42 @@ class DatabaseTests(unittest.TestCase):
         self.assertTrue(self.db.is_war_active())
         self.db.set_war_active(False)
         self.assertFalse(self.db.is_war_active())
+
+    def test_database_creates_parent_and_expands_home_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch.dict(os.environ, {"HOME": temp_dir}):
+                db = Database("~/persistent/data/players.sqlite3")
+                try:
+                    self.assertEqual(
+                        Path(db.path),
+                        (Path(temp_dir) / "persistent" / "data" / "players.sqlite3").resolve(),
+                    )
+                    db.register_player(10, 20, "Alpha")
+                finally:
+                    db.close()
+
+                reopened = Database(str(Path(temp_dir) / "persistent" / "data" / "players.sqlite3"))
+                try:
+                    self.assertEqual(reopened.get_player(10)["roblox_username"], "Alpha")
+                finally:
+                    reopened.close()
+
+
+class InstanceLockTests(unittest.TestCase):
+    def test_second_process_lock_is_rejected_then_released(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            database_path = str(Path(temp_dir) / "persistent" / "players.sqlite3")
+            first = InstanceLock(database_path)
+            second = InstanceLock(database_path)
+            first.acquire()
+            try:
+                with self.assertRaises(InstanceAlreadyRunning):
+                    second.acquire()
+            finally:
+                first.release()
+
+            second.acquire()
+            second.release()
 
 
 class FakeRoblox:

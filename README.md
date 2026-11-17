@@ -52,6 +52,8 @@ The active-war flag and registrations are stored in SQLite. After a crash/restar
 
 ## Always-on VM deployment with systemd
 
+For a focused cloud deployment checklist and environment-variable template, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Use a small Linux VM. Free VM availability and sleep/retention policies depend on the provider; confirm that its free tier keeps instances running. A conventional always-on VM may require a paid plan if the provider does not offer one free.
 
 1. Copy this project to the VM, install Python 3.9+, create the virtual environment, install requirements, and configure `.env` as above. Restrict `.env` permissions: `chmod 600 .env`.
